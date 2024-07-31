@@ -126,3 +126,99 @@ def _rotateMatrix(matrix):
 
 # _rotation = 1  # Set to desired rotation direction
 # matrix = _rotateMatrix(matrix)
+
+# (internal function) get 8x8 matrix from a column array
+def _getMatrixFromColumns(columns):
+    matrix = [[0 for _ in range(8)] for _ in range(8)]
+    for i in range(8):
+        for j in range(7, -1, -1):
+            if columns[i] >= 2 ** j:
+                columns[i] -= 2 ** j
+                matrix[i][j] = 1
+            elif columns[i] == 0:
+                break
+    return matrix
+
+# Example usage of _getMatrixFromColumns
+# columns = [0, 0, 0, 0, 0, 0, 0, 0]
+# matrix = _getMatrixFromColumns(columns)
+
+# from microbit import sleep
+
+# Scroll a text across all MAX7219 matrices for once
+def scrollText(text, delay, endDelay):
+    global _displayArray
+    printPosition = len(_displayArray) - 8
+    characters_index = []
+    currentChrIndex = 0
+    currentFontArray = []
+    nextChrCountdown = 1
+    chrCountdown = []
+    totalScrollTime = 0
+
+    # Clear screen and array
+    for i in range(len(_displayArray)):
+        _displayArray[i] = 0
+    clearAll()
+
+    # Get font index of every character and total scroll time needed
+    for i in range(len(text)):
+        index = font.index(text[i]) if text[i] in font else -1
+        if index >= 0:
+            characters_index.append(index)
+            chrCountdown.append(len(font_matrix[index]))
+            totalScrollTime += len(font_matrix[index])
+
+    totalScrollTime += _matrixNum * 8
+
+    # Print characters into array and scroll the array
+    for i in range(totalScrollTime):
+        nextChrCountdown -= 1
+        if currentChrIndex < len(characters_index) and nextChrCountdown == 0:
+            # Print a character just "outside" visible area
+            currentFontArray = font_matrix[characters_index[currentChrIndex]]
+            if currentFontArray is not None:
+                for j in range(len(currentFontArray)):
+                    _displayArray[printPosition + j] = currentFontArray[j]
+            # Wait until current character scrolled into visible area
+            nextChrCountdown = chrCountdown[currentChrIndex]
+            currentChrIndex += 1
+        
+        # Scroll array (copy all columns to the one before it)
+        for j in range(len(_displayArray) - 1):
+            _displayArray[j] = _displayArray[j + 1]
+        _displayArray[len(_displayArray) - 1] = 0
+
+        # Write every 8 columns of display array (visible area) to each MAX7219s
+        matrixCountdown = _matrixNum - 1
+        for j in range(8, len(_displayArray) - 8, 8):
+            if matrixCountdown < 0:
+                break
+            actualMatrixIndex = matrixCountdown if not _reversed else _matrixNum - 1 - matrixCountdown
+            if _rotation == 0:  # assuming 0 represents no rotation
+                for k in range(j, j + 8):
+                    _registerForOne(_DIGIT[k - j], _displayArray[k], actualMatrixIndex)
+            else:  # Rotate matrix if needed
+                tmpColumns = [0] * 8
+                for k in range(j, j + 8):
+                    tmpColumns[k - j] = _displayArray[k]
+                displayLEDsForOne(_getMatrixFromColumns(tmpColumns), actualMatrixIndex)
+            matrixCountdown -= 1
+        sleep(delay)
+    sleep(endDelay)
+
+# Example usage of scrollText
+# font = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # Example font
+# font_matrix = [
+#     [0x7e, 0x81, 0x81, 0x81, 0x7e],  # Example character matrices
+#     [0x00, 0x00, 0x00, 0x00, 0x00],  # Add more as needed
+#     # ...
+# ]
+
+# _displayArray = [0] * 24  # Example display array size
+# _matrixNum = 3  # Example number of matrices
+# _rotation = 0  # No rotation
+# _reversed = False  # No reverse
+
+# scrollText("HELLO", 75, 500)
+
