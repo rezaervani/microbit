@@ -48,4 +48,38 @@ def setup(num, cs, mosi, miso, sck):
     clearAll()  # clear screen on all MAX7219s
 
 # Example of how to call the setup function
-setup(1, pin16, pin15, pin14, pin13)
+# setup(1, pin16, pin15, pin14, pin13)
+
+# Rotation/reverse order options for 4-in-1 MAX7219 modules
+def for_4_in_1_modules(rotation, reversed):
+    global _rotation, _reversed
+    _rotation = rotation
+    _reversed = reversed
+
+# (internal function) write command and data to all MAX7219s
+def _registerAll(addressCode, data):
+    _pinCS.write_digital(0)  # LOAD=LOW, start to receive commands
+    for i in range(_matrixNum):
+        # when a MAX7219 received a new command/data set
+        # the previous one would be pushed to the next matrix along the chain via DOUT
+        spi.write(bytearray([addressCode]))  # command (8 bits)
+        spi.write(bytearray([data]))  # data (8 bits)
+    _pinCS.write_digital(1)  # LOAD=HIGH, commands take effect
+
+# (internal function) write command and data to a specific MAX7219 (index 0=farthest on the chain)
+def _registerForOne(addressCode, data, matrixIndex):
+    if matrixIndex <= _matrixNum - 1:
+        _pinCS.write_digital(0)  # LOAD=LOW, start to receive commands
+        for i in range(_matrixNum):
+            # when a MAX7219 received a new command/data set
+            # the previous one would be pushed to the next matrix along the chain via DOUT
+            if i == matrixIndex:  # send change to target
+                spi.write(bytearray([addressCode]))  # command (8 bits)
+                spi.write(bytearray([data]))  # data (8 bits)
+            else:  # do nothing to non-targets
+                spi.write(bytearray([_NOOP]))
+                spi.write(bytearray([0]))
+        _pinCS.write_digital(1)  # LOAD=HIGH, commands take effect
+
+# Example usage of for_4_in_1_modules
+# for_4_in_1_modules(0, False)  # rotation_direction.none is assumed to be 0 in this example
