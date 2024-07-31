@@ -222,3 +222,67 @@ def scrollText(text, delay, endDelay):
 
 # scrollText("HELLO", 75, 500)
 
+# from microbit import sleep
+
+# Print a text across the chain of MAX7219 matrices at a specific spot
+def displayText(text, offset, clear):
+    global _displayArray
+    if clear:
+        for i in range(len(_displayArray)):
+            _displayArray[i] = 0
+        clearAll()
+
+    # Constrain offset value and set print position
+    printPosition = min(max(offset, -8), len(_displayArray) - 9) + 8
+    currentPosition = printPosition
+    characters_index = []
+    currentChrIndex = 0
+    currentFontArray = []
+
+    # Get font index of every character
+    for char in text:
+        index = font.index(char) if char in font else -1
+        if index >= 0:
+            characters_index.append(index)
+
+    # Print characters into array from offset position
+    while currentPosition < len(_displayArray) - 8:
+        currentFontArray = font_matrix[characters_index[currentChrIndex]]
+        if currentFontArray is not None:
+            for value in currentFontArray:
+                _displayArray[printPosition] = value
+                printPosition += 1
+        currentChrIndex += 1
+        if currentChrIndex == len(characters_index):
+            break
+
+    # Write every 8 columns of display array (visible area) to each MAX7219s
+    matrixCountdown = _matrixNum - 1
+    for i in range(8, len(_displayArray) - 8, 8):
+        if matrixCountdown < 0:
+            break
+        actualMatrixIndex = matrixCountdown if not _reversed else _matrixNum - 1 - matrixCountdown
+        if _rotation == 0:  # assuming 0 represents no rotation
+            for j in range(i, i + 8):
+                _registerForOne(_DIGIT[j - i], _displayArray[j], actualMatrixIndex)
+        else:  # Rotate matrix and reverse order if needed
+            tmpColumns = [0] * 8
+            for k in range(i, i + 8):
+                tmpColumns[k - i] = _displayArray[k]
+            displayLEDsForOne(_getMatrixFromColumns(tmpColumns), actualMatrixIndex)
+        matrixCountdown -= 1
+
+# Example usage of displayText
+# font = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"  # Example font
+# font_matrix = [
+#    [0x7e, 0x81, 0x81, 0x81, 0x7e],  # Example character matrices
+#    [0x00, 0x00, 0x00, 0x00, 0x00],  # Add more as needed
+#    # ...
+# ]
+
+# _displayArray = [0] * 24  # Example display array size
+# _matrixNum = 3  # Example number of matrices
+# _rotation = 0  # No rotation
+# _reversed = False  # No reverse
+
+# displayText("HI!", -8, True)

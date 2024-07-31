@@ -27,3 +27,10 @@ You may need to adjust rotation values according to the specific enumeration or 
 * It prints characters into the display array and scrolls the array, updating the display of each MAX7219 matrix as needed.
 * The scrollText function is called with example parameters to demonstrate its usage.
 * Example font and font_matrix are provided for illustration, and you should replace these with your actual font data.
+
+* The displayText function prints a text across the chain of MAX7219 matrices at a specific offset.
+* The function initializes necessary variables and arrays.
+* It clears the screen and display array if required, calculates the font index for each character, and prints the characters into the display array from the specified offset position.
+* It writes every 8 columns of the display array (the visible area) to each MAX7219 matrix, considering rotation and reverse order if needed.
+* The displayText function is called with example parameters to demonstrate its usage.
+* Example font and font_matrix are provided for illustration, and you should replace these with your actual font data.
