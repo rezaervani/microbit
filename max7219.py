@@ -83,3 +83,46 @@ def _registerForOne(addressCode, data, matrixIndex):
 
 # Example usage of for_4_in_1_modules
 # for_4_in_1_modules(0, False)  # rotation_direction.none is assumed to be 0 in this example
+
+# (internal function) rotate matrix
+def _rotateMatrix(matrix):
+    global _rotation
+    tmp = 0
+    for i in range(4):
+        for j in range(i, 7 - i):
+            tmp = matrix[i][j]
+            if _rotation == 1:  # assuming 1 represents clockwise rotation
+                # clockwise
+                matrix[i][j] = matrix[j][7 - i]
+                matrix[j][7 - i] = matrix[7 - i][7 - j]
+                matrix[7 - i][7 - j] = matrix[7 - j][i]
+                matrix[7 - j][i] = tmp
+            elif _rotation == 2:  # assuming 2 represents counterclockwise rotation
+                # counter-clockwise
+                matrix[i][j] = matrix[7 - j][i]
+                matrix[7 - j][i] = matrix[7 - i][7 - j]
+                matrix[7 - i][7 - j] = matrix[j][7 - i]
+                matrix[j][7 - i] = tmp
+            elif _rotation == 3:  # assuming 3 represents 180 degree rotation
+                # 180 degree
+                matrix[i][j] = matrix[7 - i][7 - j]
+                matrix[7 - i][7 - j] = tmp
+                tmp = matrix[7 - j][i]
+                matrix[7 - j][i] = matrix[j][7 - i]
+                matrix[j][7 - i] = tmp
+    return matrix
+
+# Example usage of _rotateMatrix
+# matrix = [
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 0, 0, 0, 0, 0, 0, 0],
+#     [0, 0, 0, 0, 0, 0, 0, 0]
+# ]
+
+# _rotation = 1  # Set to desired rotation direction
+# matrix = _rotateMatrix(matrix)
